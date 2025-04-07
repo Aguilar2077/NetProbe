@@ -1,0 +1,11 @@
+{
+    "urls": [
+        "https://google.com",
+        "https://github.com",
+        "https://twitter.com",
+        "https://www.bilibili.com",
+        "https://www.baidu.com"
+    ],
+    "timeout_seconds": 5,
+    "max_retries": 3
+}
