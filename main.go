@@ -112,7 +112,11 @@ func main() {
 			fmt.Printf("\r")                      // Move cursor to beginning of line
 
 			if err != nil {
-				fmt.Printf("%d. Testing %s... \033[31mERROR: %v\033[0m", index+1, u, err)
+				if os.IsTimeout(err) || (err != nil && err.Error() == context.DeadlineExceeded.Error()) {
+					fmt.Printf("%d. Testing %s... \033[31mTIMEOUT\033[0m", index+1, u)
+				} else {
+					fmt.Printf("%d. Testing %s... \033[31mERROR: %v\033[0m", index+1, u, err)
+				}
 			} else {
 				colorCode := getColorCode(duration)
 				fmt.Printf("%d. Testing %s... %s%.3fms%s", index+1, u, colorCode, float64(duration.Nanoseconds())/1e6, resetColor())
