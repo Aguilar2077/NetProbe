@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -67,51 +68,53 @@ func main() {
 
 	timeout := time.Duration(config.TimeoutSeconds) * time.Second
 
-	// Print initial "connecting" messages
+	// Print initial "testing" messages
 	for i, url := range config.URLs {
-		fmt.Printf("%d. Connecting to %s...\n", i+1, url)
+		fmt.Printf("%d. Testing %s... ", i+1, url)
+		fmt.Println() // 换行，为结果预留位置
 	}
-
-	// Create a map to store results
-	resultMap := make(map[string]result)
-	var resultMutex sync.Mutex
 
 	// Create a WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
+	var outputMutex sync.Mutex
 
 	// Launch a goroutine for each URL
-	for _, url := range config.URLs {
+	for i, url := range config.URLs {
 		wg.Add(1)
-		go func(u string) {
+		go func(index int, u string) {
 			defer wg.Done()
 			duration, err := checkWebsite(u, timeout)
 
-			resultMutex.Lock()
-			resultMap[u] = result{url: u, duration: duration, err: err}
-			resultMutex.Unlock()
-		}(url)
+			// Lock output to prevent interference
+			outputMutex.Lock()
+			defer outputMutex.Unlock()
+
+			// Move cursor to the specific line and update it
+			// ANSI escape sequence to move cursor up and to beginning of line
+			linesToMoveUp := len(config.URLs) - index
+			fmt.Printf("\033[%dA", linesToMoveUp) // Move cursor up
+			fmt.Printf("\033[2K")                 // Clear entire line
+			fmt.Printf("\r")                      // Move cursor to beginning of line
+
+			if err != nil {
+				fmt.Printf("%d. Testing %s... ERROR: %v", index+1, u, err)
+			} else {
+				fmt.Printf("%d. Testing %s... %v", index+1, u, duration)
+			}
+
+			// Move cursor back down to the bottom
+			fmt.Printf("\033[%dB", linesToMoveUp)
+		}(i, url)
 	}
 
 	// Wait for all goroutines to finish
 	wg.Wait()
 
-	// Move cursor back to the start of the output
-	fmt.Print("\033[F\033[K")
-	for i := 0; i < len(config.URLs); i++ {
-		fmt.Print("\033[F\033[K")
-	}
-
-	// Display results in original order
-	for i, url := range config.URLs {
-		r := resultMap[url]
-		if r.err != nil {
-			fmt.Printf("%d. Error checking %s: %v\n", i+1, url, r.err)
-		} else {
-			fmt.Printf("%d. Latency for %s: %v\n", i+1, url, r.duration)
-		}
-	}
+	// Move cursor to the end and ensure clean output
+	fmt.Println()
 
 	// Wait for user input before exiting
-	fmt.Println("Press Enter to exit...")
-	fmt.Scanln()
+	fmt.Print("Press Enter to exit...")
+	reader := bufio.NewReader(os.Stdin)
+	reader.ReadLine()
 }
