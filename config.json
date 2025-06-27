@@ -2,6 +2,10 @@
     "urls": [
         "https://google.com",
         "https://github.com",
+        "https://openai.com",
+        "https://www.wikipedia.org",
+        "https://www.perplexity.ai",
+        "https://www.reddit.com",
         "https://twitter.com",
         "https://www.bilibili.com",
         "https://www.baidu.com"
