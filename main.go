@@ -53,6 +53,21 @@ func checkWebsite(url string, timeout time.Duration) (time.Duration, error) {
 	return duration, nil
 }
 
+func getColorCode(duration time.Duration) string {
+	ms := duration.Milliseconds()
+	if ms < 500 {
+		return "\033[32m" // Green
+	} else if ms <= 1000 {
+		return "\033[33m" // Yellow
+	} else {
+		return "\033[31m" // Red
+	}
+}
+
+func resetColor() string {
+	return "\033[0m" // Reset to default color
+}
+
 type result struct {
 	url      string
 	duration time.Duration
@@ -97,9 +112,10 @@ func main() {
 			fmt.Printf("\r")                      // Move cursor to beginning of line
 
 			if err != nil {
-				fmt.Printf("%d. Testing %s... ERROR: %v", index+1, u, err)
+				fmt.Printf("%d. Testing %s... \033[31mERROR: %v\033[0m", index+1, u, err)
 			} else {
-				fmt.Printf("%d. Testing %s... %v", index+1, u, duration)
+				colorCode := getColorCode(duration)
+				fmt.Printf("%d. Testing %s... %s%.3fms%s", index+1, u, colorCode, float64(duration.Nanoseconds())/1e6, resetColor())
 			}
 
 			// Move cursor back down to the bottom
